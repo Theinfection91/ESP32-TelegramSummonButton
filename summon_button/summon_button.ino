@@ -2,16 +2,17 @@
 #include <HTTPClient.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include "secrets.h"
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 // WiFi Information
-const char* ssid = "CarterWIFI";
-const char* password = "3366019747";
+const char* ssid = WIFI_SSID;
+const char* password = WIFI_PASSWORD;
 
 // Telegram Information
-const String botToken = "8162946786:AAEnu_-_YxRL_I6Xl_gzeMwrTnHXYrYtBS0";
-const String chatId = "8394512494";
+const String botToken = TELEGRAM_BOT_TOKEN;
+const String chatId = TELEGRAM_CHAT_ID;
 
 // GPIO Fields
 const int buttonPin = 4;
