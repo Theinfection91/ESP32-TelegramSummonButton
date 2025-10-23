@@ -1,47 +1,55 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <UniversalTelegramBot.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include "secrets.h"
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
-
-// WiFi Information
-const char* ssid = WIFI_SSID;
-const char* password = WIFI_PASSWORD;
-
-// Telegram Information
-const String botToken = TELEGRAM_BOT_TOKEN;
-const String chatId = TELEGRAM_CHAT_ID;
-
-// GPIO Fields
-const int buttonPin = 4;
-bool lastState = LOW;
-
 // Message/Scroll LCD Fields
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 String message = "Chase has been summoned...";
 int scrollIndex = 0;
 unsigned long lastScroll = 0;
 const unsigned long scrollDelay = 300; // ms per scroll step
 bool scrolling = false;
 
+// GPIO Fields
+const int buttonPin = 4;
+bool lastState = LOW;
+
+// WiFi and Telegram Bot Fields
+WiFiClientSecure client;
+UniversalTelegramBot bot(TELEGRAM_BOT_TOKEN, client);
+
+// Timing Fields
+int botRequestDelay = 1000; // Every one second
+unsigned long lastTimeBotRan;
+
 void setup() {
+  // Initialize Serial, Button, and LCD
   Serial.begin(115200);
+  pinMode(buttonPin, INPUT);
   lcd.init();
   lcd.backlight();
-  pinMode(buttonPin, INPUT);
-
   lcd.setCursor(0, 0);
+
+  // Connect to WiFi
   lcd.print("Connecting WiFi");
-  WiFi.begin(ssid, password);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+  client.setCACert(TELEGRAM_CERTIFICATE_ROOT);
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
+
+  // WiFi connected, clear LCD and turn off backlight, notify via Telegram
   lcd.clear();
   lcd.print("Ready.");
   delay(2000);
   lcd.noBacklight();
+  bot.sendMessage(TELEGRAM_CHAT_ID, "🤖 The summon button is now online.");
 }
 
 void loop() {
@@ -91,8 +99,8 @@ void sendTelegramMessage(String text) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
 
-    String url = "https://api.telegram.org/bot" + String(botToken) +
-                 "/sendMessage?chat_id=" + String(chatId) +
+    String url = "https://api.telegram.org/bot" + String(TELEGRAM_BOT_TOKEN) +
+                 "/sendMessage?chat_id=" + String(TELEGRAM_CHAT_ID) +
                  "&text=" + text;
 
     http.begin(url);
